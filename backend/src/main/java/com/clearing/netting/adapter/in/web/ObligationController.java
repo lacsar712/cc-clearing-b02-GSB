@@ -10,6 +10,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -54,6 +55,17 @@ public class ObligationController {
                 request.settleDate()));
     }
 
+    @PostMapping("/{obligationId}/cancel")
+    public ObligationResponse cancel(
+            @PathVariable String obligationId,
+            @Valid @RequestBody CancelObligationRequest request) {
+        AuthContext.requireOperator();
+        return ObligationResponse.from(obligationService.cancel(obligationId, request.reason()));
+    }
+
+    public record CancelObligationRequest(@NotBlank String reason) {
+    }
+
     public record CreateObligationRequest(
             @NotBlank String payerMemberId,
             @NotBlank String payeeMemberId,
@@ -72,7 +84,8 @@ public class ObligationController {
             LocalDate tradeDate,
             LocalDate settleDate,
             ObligationStatus status,
-            String nettingRunId) {
+            String nettingRunId,
+            String cancelReason) {
         static ObligationResponse from(TradeObligation o) {
             return new ObligationResponse(
                     o.getObligationId(),
@@ -83,7 +96,8 @@ public class ObligationController {
                     o.getTradeDate(),
                     o.getSettleDate(),
                     o.getStatus(),
-                    o.getNettingRunId());
+                    o.getNettingRunId(),
+                    o.getCancelReason());
         }
     }
 }

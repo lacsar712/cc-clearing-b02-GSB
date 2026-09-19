@@ -74,7 +74,22 @@
         <el-table-column prop="settleDate" label="交割日" width="120" />
         <el-table-column prop="status" label="状态" width="110">
           <template #default="{ row }">
-            <el-tag>{{ row.status }}</el-tag>
+            <el-tag :type="tagType(row.status)">{{ row.status }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="取消原因" min-width="160">
+          <template #default="{ row }">{{ row.cancelReason || '—' }}</template>
+        </el-table-column>
+        <el-table-column v-if="auth.isOperator" label="操作" width="90" fixed="right">
+          <template #default="{ row }">
+            <el-button
+              v-if="row.status === 'OPEN'"
+              type="danger"
+              link
+              size="small"
+              :loading="cancellingId === row.obligationId"
+              @click="cancelRow(row)"
+            >取消</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -84,7 +99,7 @@
 
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import api from '../api/client'
 import { useAuthStore } from '../stores/auth'
 
@@ -93,6 +108,7 @@ const members = ref([])
 const rows = ref([])
 const loading = ref(false)
 const saving = ref(false)
+const cancellingId = ref('')
 const today = new Date().toISOString().slice(0, 10)
 
 const form = reactive({
@@ -115,6 +131,10 @@ const memberMap = computed(() => Object.fromEntries(members.value.map((m) => [m.
 
 function nameOf(id) {
   return memberMap.value[id] || id
+}
+
+function tagType(status) {
+  return { OPEN: 'warning', NETTED: 'primary', SETTLED: 'success', CANCELLED: 'info' }[status] || 'info'
 }
 
 async function loadMembers() {
@@ -145,6 +165,33 @@ async function create() {
   } finally {
     saving.value = false
   }
+}
+
+async function cancelRow(row) {
+  let reason
+  try {
+    const { value } = await ElMessageBox.prompt('取消后不可恢复，且不再参与轧差', '取消义务', {
+      confirmButtonText: '确认取消',
+      cancelButtonText: '返回',
+      inputPlaceholder: '请输入取消原因（必填）',
+      inputValidator: (v) => (v && v.trim().length > 0 ? true : '取消原因必填')
+    })
+    reason = value.trim()
+  } catch {
+    return // 用户放弃取消
+  }
+  cancellingId.value = row.obligationId
+  try {
+    await api.post(`/obligations/${row.obligationId}/cancel`, { reason })
+    ElMessage.success('义务已取消')
+  } catch {
+    return // 失败信息已由拦截器提示（如非 OPEN 状态被明确拒绝）
+  } finally {
+    cancellingId.value = ''
+  }
+  // 若当前仅筛选 OPEN，切到全部状态，保证刚取消的笔立即以 CANCELLED 可见
+  if (filters.status === 'OPEN') filters.status = ''
+  await load()
 }
 
 onMounted(async () => {

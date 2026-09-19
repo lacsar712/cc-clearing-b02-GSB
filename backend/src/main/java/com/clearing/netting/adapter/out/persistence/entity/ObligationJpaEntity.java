@@ -44,6 +44,9 @@ public class ObligationJpaEntity {
     @Column(length = 64)
     private String nettingRunId;
 
+    @Column(length = 512)
+    private String cancelReason;
+
     public String getObligationId() {
         return obligationId;
     }
@@ -114,5 +117,13 @@ public class ObligationJpaEntity {
 
     public void setNettingRunId(String nettingRunId) {
         this.nettingRunId = nettingRunId;
+    }
+
+    public String getCancelReason() {
+        return cancelReason;
+    }
+
+    public void setCancelReason(String cancelReason) {
+        this.cancelReason = cancelReason;
     }
 }

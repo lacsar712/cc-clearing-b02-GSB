@@ -71,7 +71,7 @@ class MultilateralNettingServiceTest {
         TradeObligation usd = obligation("A", "B", "10");
         TradeObligation eur = new TradeObligation(
                 "o2", "B", "A", "EUR", new BigDecimal("5"),
-                settleDate.minusDays(1), settleDate, ObligationStatus.OPEN, null);
+                settleDate.minusDays(1), settleDate, ObligationStatus.OPEN, null, null);
 
         DomainException ex = assertThrows(DomainException.class, () ->
                 service.net("run-3", "USD", List.of(usd, eur), Map.of("A", a, "B", b)));
@@ -88,6 +88,7 @@ class MultilateralNettingServiceTest {
                 settleDate.minusDays(1),
                 settleDate,
                 ObligationStatus.OPEN,
+                null,
                 null);
     }
 }

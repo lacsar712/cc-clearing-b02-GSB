@@ -16,6 +16,7 @@ public class TradeObligation {
     private final LocalDate settleDate;
     private ObligationStatus status;
     private String nettingRunId;
+    private String cancelReason;
 
     public TradeObligation(
             String obligationId,
@@ -26,7 +27,8 @@ public class TradeObligation {
             LocalDate tradeDate,
             LocalDate settleDate,
             ObligationStatus status,
-            String nettingRunId) {
+            String nettingRunId,
+            String cancelReason) {
         this.obligationId = Objects.requireNonNull(obligationId);
         this.payerMemberId = Objects.requireNonNull(payerMemberId);
         this.payeeMemberId = Objects.requireNonNull(payeeMemberId);
@@ -36,6 +38,7 @@ public class TradeObligation {
         this.settleDate = Objects.requireNonNull(settleDate);
         this.status = Objects.requireNonNull(status);
         this.nettingRunId = nettingRunId;
+        this.cancelReason = cancelReason;
     }
 
     public static TradeObligation open(
@@ -60,7 +63,19 @@ public class TradeObligation {
                 tradeDate,
                 settleDate,
                 ObligationStatus.OPEN,
+                null,
                 null);
+    }
+
+    public void cancel(String reason) {
+        if (status != ObligationStatus.OPEN) {
+            throw new IllegalStateException("only OPEN obligations can be cancelled, current: " + status);
+        }
+        if (reason == null || reason.isBlank()) {
+            throw new IllegalArgumentException("cancel reason is required");
+        }
+        this.status = ObligationStatus.CANCELLED;
+        this.cancelReason = reason.trim();
     }
 
     public void markNetted(String runId) {
@@ -112,5 +127,9 @@ public class TradeObligation {
 
     public String getNettingRunId() {
         return nettingRunId;
+    }
+
+    public String getCancelReason() {
+        return cancelReason;
     }
 }
