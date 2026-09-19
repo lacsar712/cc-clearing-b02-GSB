@@ -38,7 +38,8 @@ final class PersistenceMapper {
                 e.getTradeDate(),
                 e.getSettleDate(),
                 e.getStatus(),
-                e.getNettingRunId());
+                e.getNettingRunId(),
+                e.getCancelReason());
     }
 
     static ObligationJpaEntity toEntity(TradeObligation o) {
@@ -52,6 +53,7 @@ final class PersistenceMapper {
         e.setSettleDate(o.getSettleDate());
         e.setStatus(o.getStatus());
         e.setNettingRunId(o.getNettingRunId());
+        e.setCancelReason(o.getCancelReason());
         return e;
     }
 
